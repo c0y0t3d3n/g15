@@ -1,0 +1,15 @@
+[Unit]
+Description=Logitech G15 keyboard LCD multiplexer
+Documentation=man:g15daemon(1)
+Wants=remote-fs.target
+After=remote-fs.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/default/g15daemon
+ExecStartPre=-/sbin/modprobe -q uinput
+ExecStartPre=-/sbin/udevadm settle -t 5 -E /dev/uinput
+ExecStart=/usr/sbin/g15daemon $DAEMON_OPTS
+ExecStop=/usr/sbin/g15daemon $DAEMON_OPTS -k
+ExecStop=sleep 1
+ExecStop=pkill -9 g15daemon

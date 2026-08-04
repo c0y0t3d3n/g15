@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=g15macro
+GenericName=g15macro service
+Exec=/usr/bin/g15macro
+Terminal=false
+Type=Application
+X-GNOME-Autostart-enabled=true
