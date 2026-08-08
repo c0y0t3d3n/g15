@@ -1,22 +1,37 @@
-#/bin/bash
-sudo apt install git build-essential autoconf libtool g15daemon libg15-dev libg15daemon-client-dev libg15render-dev libgtop2-dev xorg-dev -y || exit
-rm -rf g15stats
-git clone https://gitlab.com/menelkir/g15stats.git
-pushd g15stats 
-autoreconf --install && ./configure && make && sudo make install || exit 1
-popd
-rm -rf g15stats
-rm -rf g15macro
-git clone https://gitlab.com/menelkir/g15macro.git
-pushd g15macro
-patch -p1 < ../g15macro.patch
-autoreconf --install && ./configure && make && sudo make install || exit 1
-popd
-rm -rf g15macro
-sudo cp -v g15daemon.service /usr/lib/systemd/system/
-sudo cp -v g15stats.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl restart g15daemon
-sudo systemctl enable --now g15stats
-sudo systemctl restart g15stats
-cp -v g15macro.desktop ~/.local/share/applications
+#!/bin/bash -x 
+REPO=https://gitlab.com/menelkir
+IFACE=`ip link | grep '^.:' | grep -v 'lo:' | cut -d: -f2 | head -1`
+if [ "$2" != '' ]; then
+	ACTION=$2
+else
+	ACTION='install'
+fi
+sudo apt install git build-essential autoconf libtool libusb-dev libgtop2-dev xorg-dev -y || exit
+for r in libg15 libg15render g15daemon g15stats g15macro g15message
+do
+	if [ "$1" = "" -o "$1" = "$r" ]; then
+		rm -rf $r
+		git clone $REPO/$r.git
+		pushd $r
+		if [ -f ../$r.patch ]; then
+			patch -p1 < ../$r.patch
+		fi	
+		autoreconf --install && ./configure --libdir=/usr/lib && make && sudo make $ACTION || exit
+		if [ -f ../$r.service ]; then
+			sed 's/$IFACE/'"$IFACE"'/' ../$r.service > $r.service
+			sudo cp $r.service /etc/systemd/system/
+		elif [ -f contrib/init/$r.service ]; 
+			then sudo cp -v contrib/init/$r.service /etc/systemd/system/; 
+		fi
+		if [ -f /etc/systemd/system/$r.service ]; then
+			sudo systemctl daemon-reload
+			sudo systemctl enable --now $r
+			sudo systemctl restart $r
+		fi
+		if [ -f ../$r.desktop ]; then
+			cp -v ../$r.desktop ~/.local/share/applications
+		fi
+		popd
+		if [ "$1" = "" ]; then rm -rf $r; fi
+	fi
+done

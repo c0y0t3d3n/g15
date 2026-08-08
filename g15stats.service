@@ -1,12 +1,11 @@
 [Unit]
-Description=Logitech G15 keyboard LCD stats
+Description=Logitech G15 Stats
+Requires=g15daemon.service
 After=g15daemon.service
 
-[Install]
-WantedBy=multi-user.target
-
 [Service]
-User=nobody
-Type=forking
 ExecStartPre=sleep 1
-ExecStart=/usr/bin/g15stats -d -i eno2
+ExecStart=/usr/bin/g15stats -i$IFACE
+
+[Install]
+WantedBy=multi-user.target 
